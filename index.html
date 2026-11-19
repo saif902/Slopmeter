@@ -1,0 +1,236 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Slopmeter: X slop score</title>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,800&family=Newsreader:ital,wght@0,400;1,400&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#EDF1EE;--ink:#16213A;--mute:#586376;--card:#FFFFFF;--line:#C9D2CD;--accent:#2D5BFF;--onaccent:#FFFFFF;--chip:#E3E9E5;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);color-scheme:light}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0F1520;--ink:#E7ECF3;--mute:#9AA6B8;--card:#172030;--line:#2A3548;--accent:#7FA2FF;--onaccent:#0F1520;--chip:#222D40;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0F1520;--ink:#E7ECF3;--mute:#9AA6B8;--card:#172030;--line:#2A3548;--accent:#7FA2FF;--onaccent:#0F1520;--chip:#222D40;color-scheme:dark}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:17px/1.55 "Newsreader",Georgia,serif}
+main{max-width:720px;margin:0 auto;padding:40px 20px 64px}
+h1,h2,.num,button,.pill,label{font-family:"Bricolage Grotesque","Helvetica Neue",Arial,sans-serif}
+h1{font-size:clamp(34px,8vw,56px);line-height:1.02;font-weight:800;margin:0 0 14px;letter-spacing:-.02em}
+.lead{color:var(--mute);margin:0 0 28px;max-width:56ch}
+label{display:block;font-weight:500;font-size:15px;margin:0 0 6px}
+textarea,input{width:100%;background:var(--card);color:var(--ink);border:1.5px solid var(--line);border-radius:10px;padding:12px 14px;font:inherit}
+textarea{min-height:230px;resize:vertical}
+textarea:focus,input:focus,button:focus-visible,a:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.hint{font-size:14.5px;color:var(--mute);margin:6px 0 18px}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+button,.btn{background:var(--accent);color:var(--onaccent);border:0;border-radius:10px;padding:12px 20px;font-weight:800;font-size:16px;cursor:pointer;text-decoration:none;display:inline-block}
+button.alt,.btn.alt{background:transparent;color:var(--ink);border:1.5px solid var(--line)}
+#err{color:#C2362B;margin:10px 0 0;min-height:1.4em}
+@media (prefers-color-scheme:dark){#err{color:#FF8E84}}
+#out{margin-top:36px}
+#out[hidden]{display:none}
+.card{background:var(--card);border:1.5px solid var(--line);border-radius:18px;padding:26px 24px}
+.card .who{font-family:"Bricolage Grotesque",sans-serif;font-weight:500;color:var(--mute)}
+.num{font-size:clamp(72px,22vw,128px);font-weight:800;line-height:.95;letter-spacing:-.04em;margin:4px 0}
+.num small{font-size:.28em;color:var(--mute);letter-spacing:0;font-weight:500}
+.verdict{font-family:"Bricolage Grotesque",sans-serif;font-size:22px;font-weight:800;margin:4px 0 16px}
+.meter{display:grid;grid-template-columns:repeat(20,1fr);gap:3px;margin:0 0 18px}
+.meter i{height:18px;border-radius:3px;background:var(--chip)}
+.tells{display:flex;gap:8px;flex-wrap:wrap;margin:0;padding:0;list-style:none}
+.tells li,.pill{background:var(--chip);border-radius:99px;padding:3px 12px;font-size:14.5px;font-family:"Bricolage Grotesque",sans-serif}
+.brand{margin-top:18px;font-size:13.5px;color:var(--mute);font-family:"Bricolage Grotesque",sans-serif}
+h2{font-size:24px;margin:40px 0 12px}
+.post{border-top:1.5px solid var(--line);padding:14px 0}
+.post p{margin:0 0 8px;font-style:italic}
+.post .top{display:flex;justify-content:space-between;gap:12px;align-items:baseline}
+.post b{font-family:"Bricolage Grotesque",sans-serif;font-size:22px}
+.foot{color:var(--mute);font-size:14.5px;margin-top:36px}
+</style>
+</head>
+<body>
+<main>
+<h1>How sloppy is your X feed?</h1>
+<p class="lead">Enter an X username and get a slop score from 0 to 100 for the account’s last 100 posts. Nothing is stored.</p>
+
+<label for="user">X username</label>
+<div class="row"><input id="user" placeholder="@username" maxlength="16" autocomplete="off" style="max-width:260px"><button id="fetch" type="button">Score last 100 posts</button></div>
+<p class="hint" id="fstat" role="status">Replies and reposts are skipped. Only public posts are read.</p>
+<details style="margin-top:18px"><summary>Or paste posts yourself</summary>
+<label for="posts" style="margin-top:12px">Your posts</label>
+<textarea id="posts" placeholder="Paste a post here.&#10;---&#10;Paste the next post here.&#10;---&#10;And so on."></textarea>
+<p class="hint">Put a line with only <b>---</b> between posts. Without it, a blank line separates posts.</p>
+
+<label for="handle">Your @username (optional, shown on the card only)</label>
+<input id="handle" placeholder="@yourname" maxlength="16" autocomplete="off" style="max-width:260px">
+<p id="err" role="alert"></p>
+<div class="row" style="margin-top:6px">
+<button id="go" type="button">Score my posts</button>
+<button id="sample" type="button" class="alt">Try a sample</button>
+</div>
+
+</details>
+
+<section id="out" hidden aria-live="polite">
+<div class="card" id="card">
+<div class="who" id="cwho"></div>
+<div class="num"><span id="cnum">0</span><small>/100</small></div>
+<div class="verdict" id="cverdict"></div>
+<div class="meter" id="meter" aria-hidden="true"></div>
+<ul class="tells" id="ctells"></ul>
+<div class="brand">Slopmeter · scored in the browser</div>
+</div>
+<div class="row" style="margin-top:14px">
+<a class="btn" id="xshare" target="_blank" rel="noopener noreferrer" href="#">Share on X</a>
+<button id="copy" type="button" class="alt">Copy result text</button>
+</div>
+<p class="hint">To save the card as an image, take a screenshot of it.</p>
+
+<h2>Post by post</h2>
+<div id="list"></div>
+<p class="foot">This is a fun heuristic, not proof of anything. It counts stock phrases, buzzwords, em dashes, “not X, it’s Y” lines, hashtag piles, engagement bait, one-line paragraphs and recycled openers. A high score means the writing looks templated, whether a person or a model wrote it.</p>
+</section>
+</main>
+
+<script>
+const PH=["game changer","game-changer","in today’s","in today's","let’s dive","let's dive","here’s the thing","here's the thing","the truth is","let that sink in","read that again","nobody talks about","most people don’t","most people don't","here’s why","here's why","changed my life","pro tip","buckle up","plot twist","hot take","unpopular opinion","a thread","thread 🧵"];
+const BZ=/\b(unlock(ing)?|elevate|seamless(ly)?|robust|leverage|delve|tapestry|landscape|journey|revolutioni[sz]e|cutting-edge|supercharge|navigate|ever-evolving|testament|transformative|empower|synergy|holistic|paradigm)\b/gi;
+const NOT1=/\bnot (just|only|about)\b[^.\n]{2,60}\b(but|it['’]?s)\b/i;
+const NOT2=/\b(it|this|that)['’]?s not\b[^.\n]{2,60}[,.;—–]\s*(it['’]?s|it is|but)\b/i;
+const BAIT=/follow (me )?for more|repost|retweet|\brt if|bookmark this|reply with|comment below|like if|link in (bio|comments)|dm me/i;
+const HOOK=/^(here['’]s|stop |most people|nobody|the (truth|secret|real)|unpopular|hot take|i (spent|just|built|made)|\d+ (ways|tips|lessons|things|rules))/i;
+const HOOKEMO=/[🧵👇🚀🔥💡✅⬇️📌]/u;
+const SAMPLE=`Here’s the thing nobody talks about: most founders don’t fail because of the product. It’s not a talent problem — it’s a consistency problem.
+
+Let that sink in. 🚀
+---
+10 lessons I learned building in public:
+
+1. Ship fast
+2. Talk to users
+3. Leverage your network
+4. Unlock compounding
+5. Stay consistent
+
+Follow for more 👇 #startup #growth #ai #buildinpublic
+---
+In today’s ever-evolving landscape, AI isn’t just a tool — it’s a game-changer for your journey.
+
+Bookmark this.
+---
+lol my train is 40 minutes late and the chai guy just gave me a free biscuit so honestly the day is fine
+---
+Here’s why most people don’t get results:
+
+They quit.
+
+Every.
+
+Single.
+
+Time.`;
+
+function scorePost(t){
+  let s=0;const tells=[];const add=(n,l)=>{s+=n;tells.push(l)};
+  const low=t.toLowerCase();
+  const ph=PH.filter(p=>low.includes(p)).length; if(ph)add(Math.min(36,ph*12),"Stock phrases");
+  const bz=(t.match(BZ)||[]).length; if(bz)add(Math.min(24,bz*8),"Buzzwords");
+  const em=(t.match(/—/g)||[]).length; if(em)add(Math.min(12,em*6),"Em dashes");
+  if(NOT1.test(t)||NOT2.test(t))add(14,"Not X, it’s Y");
+  const ht=(t.match(/#\w+/g)||[]).length; if(ht>2)add(Math.min(16,(ht-2)*8),"Hashtag pile");
+  if(HOOKEMO.test(t)||((t.match(/\p{Extended_Pictographic}/gu)||[]).length>3))add(8,"Emoji hooks");
+  if(BAIT.test(t))add(16,"Engagement bait");
+  const lines=t.split("\n").map(x=>x.trim()).filter(Boolean);
+  const avg=lines.length?lines.reduce((a,l)=>a+l.split(/\s+/).length,0)/lines.length:0;
+  if(lines.length>=5&&avg<8)add(12,"One-line paragraphs");
+  if(lines.filter(l=>/^(\d+[.)]|[-•✅→])\s/.test(l)).length>=4)add(8,"List format");
+  if(HOOK.test(lines[0]||""))add(10,"Hook opener");
+  return{score:Math.min(100,s),tells};
+}
+function verdict(n){
+  return n<15?"Human. Typos and all.":n<35?"Mostly human":n<55?"Some slop":n<75?"Slop-adjacent":"Peak slop";
+}
+function split(raw){
+  const parts=/^\s*-{3,}\s*$/m.test(raw)?raw.split(/^\s*-{3,}\s*$/m):raw.split(/\n\s*\n/);
+  return parts.map(x=>x.trim()).filter(Boolean).slice(0,100);
+}
+function el(tag,cls,txt){const e=document.createElement(tag);if(cls)e.className=cls;if(txt!=null)e.textContent=txt;return e}
+let lastText="";
+function run(){
+  const err=document.getElementById("err");err.textContent="";
+  const posts=split(document.getElementById("posts").value);
+  if(!posts.length){err.textContent="Paste at least one post first.";return}
+  const res=posts.map(p=>({text:p,...scorePost(p)}));
+  let avg=res.reduce((a,r)=>a+r.score,0)/res.length;
+  const globalTells=[];
+  if(res.length>=3){
+    const open=posts.map(p=>p.toLowerCase().split(/\s+/).slice(0,2).join(" "));
+    const c={};open.forEach(o=>c[o]=(c[o]||0)+1);
+    if(Math.max(...Object.values(c))/res.length>=.3){avg+=8;globalTells.push("Recycled openers")}
+  }
+  const score=Math.round(Math.min(100,avg));
+  const tally={};res.forEach(r=>r.tells.forEach(t=>tally[t]=(tally[t]||0)+1));
+  globalTells.forEach(t=>tally[t]=99);
+  const top=Object.entries(tally).sort((a,b)=>b[1]-a[1]).slice(0,5).map(x=>x[0]);
+  let h=document.getElementById("handle").value.trim().replace(/[^\w@]/g,"");
+  if(h&&h[0]!=="@")h="@"+h;
+  document.getElementById("cwho").textContent=h?h+"’s X slop score":"X slop score";
+  document.getElementById("cnum").textContent=score;
+  const v=verdict(score);
+  document.getElementById("cverdict").textContent=v;
+  const m=document.getElementById("meter");m.textContent="";
+  const filled=Math.round(score/5);
+  for(let i=0;i<20;i++){
+    const b=document.createElement("i");
+    if(i<filled)b.style.background="hsl("+Math.round(215-120*i/19)+" 62% 48%)";
+    m.appendChild(b);
+  }
+  const tl=document.getElementById("ctells");tl.textContent="";
+  (top.length?top:["No slop tells found"]).forEach(t=>tl.appendChild(el("li",null,t)));
+  const list=document.getElementById("list");list.textContent="";
+  res.forEach((r,i)=>{
+    const d=el("div","post");
+    const top=el("div","top");
+    top.appendChild(el("b",null,r.score+"/100"));
+    top.appendChild(el("span","pill","Post "+(i+1)));
+    d.appendChild(top);
+    d.appendChild(el("p",null,r.text.length>160?r.text.slice(0,160).replace(/\s+/g," ")+"…":r.text.replace(/\s+/g," ")));
+    const ul=el("ul","tells");
+    (r.tells.length?r.tells:["Clean"]).forEach(t=>ul.appendChild(el("li",null,t)));
+    d.appendChild(ul);list.appendChild(d);
+  });
+  lastText=(h?h+": ":"")+"My X slop score is "+score+"/100 ("+v+"). Check yours with Slopmeter.";
+  document.getElementById("xshare").href="https://x.com/intent/post?text="+encodeURIComponent(lastText);
+  const out=document.getElementById("out");out.hidden=false;
+  out.scrollIntoView({behavior:"smooth",block:"start"});
+}
+document.getElementById("fetch").onclick=async()=>{
+  const st=document.getElementById("fstat"),b=document.getElementById("fetch");
+  const u=document.getElementById("user").value.trim().replace(/^@/,"");
+  if(!/^\w{1,15}$/.test(u)){st.textContent="Enter a valid X username.";return}
+  b.disabled=true;st.textContent="Loading posts…";
+  try{
+    const r=await fetch("/api/posts?u="+encodeURIComponent(u));
+    const j=await r.json();
+    if(!r.ok)throw new Error(j.error||"Could not load posts.");
+    document.getElementById("posts").value=j.posts.join("\n---\n");
+    document.getElementById("handle").value="@"+u;
+    st.textContent="Scored "+j.posts.length+" posts from @"+u+".";
+    run();
+  }catch(e){st.textContent=e.message}
+  b.disabled=false;
+};
+document.getElementById("go").onclick=run;
+document.getElementById("sample").onclick=()=>{document.getElementById("posts").value=SAMPLE;run()};
+document.getElementById("copy").onclick=async e=>{
+  const b=e.currentTarget;
+  try{await navigator.clipboard.writeText(lastText);b.textContent="Copied"}
+  catch(_){
+    const t=document.createElement("textarea");t.value=lastText;document.body.appendChild(t);t.select();
+    try{document.execCommand("copy");b.textContent="Copied"}catch(_){b.textContent="Select and copy from the card"}
+    t.remove();
+  }
+  setTimeout(()=>b.textContent="Copy result text",1800);
+};
+</script>
+</body>
+  </html>
