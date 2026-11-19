@@ -3,95 +3,237 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Slopmeter: X slop score</title>
-<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,800&family=Newsreader:ital,wght@0,400;1,400&display=swap" rel="stylesheet">
+<title>Slopmeter: how sloppy is your X feed?</title>
+<meta name="description" content="Enter any X username and get a slop score from 0 to 100 for their last 100 posts and replies.">
+<meta property="og:title" content="Slopmeter: how sloppy is your X feed?">
+<meta property="og:description" content="Get a slop score from 0 to 100 for any X account's last 100 posts and replies.">
+<meta name="twitter:card" content="summary">
+<meta name="theme-color" content="#07080d">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%2307080d'/%3E%3Cpath d='M6 22a10 10 0 0 1 20 0' fill='none' stroke='%23ff5a5f' stroke-width='3.5' stroke-linecap='round'/%3E%3Cpath d='M16 22l5-7' stroke='%23fff' stroke-width='3' stroke-linecap='round'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
 <style>
-:root{--bg:#EDF1EE;--ink:#16213A;--mute:#586376;--card:#FFFFFF;--line:#C9D2CD;--accent:#2D5BFF;--onaccent:#FFFFFF;--chip:#E3E9E5;
-box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);color-scheme:light}
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0F1520;--ink:#E7ECF3;--mute:#9AA6B8;--card:#172030;--line:#2A3548;--accent:#7FA2FF;--onaccent:#0F1520;--chip:#222D40;color-scheme:dark}}
-:root[data-theme="dark"]{--bg:#0F1520;--ink:#E7ECF3;--mute:#9AA6B8;--card:#172030;--line:#2A3548;--accent:#7FA2FF;--onaccent:#0F1520;--chip:#222D40;color-scheme:dark}
-html{scroll-padding-top:env(safe-area-inset-top,0px)}
+:root{--bg:#07080d;--panel:rgba(255,255,255,.04);--panel2:rgba(255,255,255,.07);--line:rgba(255,255,255,.1);--ink:#eceef5;--mute:#8e95a8;--tier:#ffa03c;--tier2:#ff5a5f;
+--disp:"Space Grotesk","Inter",system-ui,sans-serif;--body:"Inter",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;color-scheme:dark}
 *{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--ink);font:17px/1.55 "Newsreader",Georgia,serif}
-main{max-width:720px;margin:0 auto;padding:40px 20px 64px}
-h1,h2,.num,button,.pill,label{font-family:"Bricolage Grotesque","Helvetica Neue",Arial,sans-serif}
-h1{font-size:clamp(34px,8vw,56px);line-height:1.02;font-weight:800;margin:0 0 14px;letter-spacing:-.02em}
-.lead{color:var(--mute);margin:0 0 28px;max-width:56ch}
-label{display:block;font-weight:500;font-size:15px;margin:0 0 6px}
-textarea,input{width:100%;background:var(--card);color:var(--ink);border:1.5px solid var(--line);border-radius:10px;padding:12px 14px;font:inherit}
-textarea{min-height:230px;resize:vertical}
-textarea:focus,input:focus,button:focus-visible,a:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
-.hint{font-size:14.5px;color:var(--mute);margin:6px 0 18px}
-.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
-button,.btn{background:var(--accent);color:var(--onaccent);border:0;border-radius:10px;padding:12px 20px;font-weight:800;font-size:16px;cursor:pointer;text-decoration:none;display:inline-block}
-button.alt,.btn.alt{background:transparent;color:var(--ink);border:1.5px solid var(--line)}
-#err{color:#C2362B;margin:10px 0 0;min-height:1.4em}
-@media (prefers-color-scheme:dark){#err{color:#FF8E84}}
-#out{margin-top:36px}
+[hidden]{display:none!important}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 var(--body);min-height:100vh;
+background-image:radial-gradient(900px 500px at 12% -10%,rgba(127,92,255,.22),transparent 60%),radial-gradient(800px 500px at 100% 0,rgba(255,90,95,.14),transparent 60%),linear-gradient(rgba(255,255,255,.025) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.025) 1px,transparent 1px);
+background-size:auto,auto,44px 44px,44px 44px;background-attachment:fixed}
+a{color:inherit}
+.wrap{max-width:1080px;margin:0 auto;padding:22px 20px 70px}
+nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:48px}
+.logo{display:flex;align-items:center;gap:10px;font:700 20px var(--disp);letter-spacing:-.01em}
+.logo svg{width:30px;height:30px}
+.tag{font-size:13px;color:var(--mute);border:1px solid var(--line);border-radius:99px;padding:4px 12px;background:var(--panel)}
+.hero{text-align:center;max-width:720px;margin:0 auto 34px}
+h1{font:700 clamp(38px,8.5vw,72px)/1.02 var(--disp);letter-spacing:-.035em;margin:0 0 16px}
+h1 em{font-style:normal;background:linear-gradient(95deg,#ff5a5f,#ff4fd8 55%,#7f5cff);-webkit-background-clip:text;background-clip:text;color:transparent}
+.lead{color:var(--mute);font-size:clamp(16px,2.4vw,19px);margin:0 auto;max-width:54ch}
+.search{max-width:560px;margin:30px auto 0;display:flex;gap:10px;padding:8px;border-radius:18px;background:var(--panel);border:1px solid var(--line);backdrop-filter:blur(8px);box-shadow:0 20px 60px -30px rgba(127,92,255,.6)}
+.search:focus-within{border-color:rgba(255,255,255,.28)}
+.field{flex:1;display:flex;align-items:center;gap:4px;padding:0 10px;min-width:0}
+.field span{color:var(--mute);font:500 18px var(--disp)}
+.field input{flex:1;min-width:0;background:none;border:0;color:var(--ink);font:500 18px var(--body);padding:12px 0;outline:none}
+.field input::placeholder{color:#5d6478}
+.btn,button{font:600 15px var(--disp);cursor:pointer;border:0;border-radius:12px;padding:13px 20px;color:#0b0c12;background:linear-gradient(95deg,#ff7a7e,#ffb36b);text-decoration:none;display:inline-flex;align-items:center;justify-content:center;gap:8px;white-space:nowrap;transition:transform .12s,filter .12s}
+.btn:hover,button:hover{filter:brightness(1.08)}.btn:active,button:active{transform:translateY(1px)}
+button:disabled{opacity:.55;cursor:wait}
+.btn.ghost,button.ghost{background:var(--panel2);color:var(--ink);border:1px solid var(--line)}
+:is(a,button,input,textarea,summary):focus-visible{outline:2px solid #fff;outline-offset:2px}
+.status{text-align:center;color:var(--mute);font-size:14.5px;margin:14px 0 0;min-height:1.4em}
+.status.err{color:#ff8e93}
+.spin{display:inline-block;width:13px;height:13px;border:2px solid var(--line);border-top-color:#fff;border-radius:50%;animation:sp .8s linear infinite;vertical-align:-2px;margin-right:8px}
+@keyframes sp{to{transform:rotate(360deg)}}
+details.paste{max-width:560px;margin:22px auto 0;border:1px dashed var(--line);border-radius:14px;padding:12px 16px;background:rgba(255,255,255,.02)}
+details.paste summary{cursor:pointer;color:var(--mute);font-size:14.5px}
+textarea,.paste input{width:100%;background:rgba(0,0,0,.35);color:var(--ink);border:1px solid var(--line);border-radius:12px;padding:12px 14px;font:inherit;font-size:15px}
+textarea{min-height:170px;resize:vertical;margin-top:12px}
+.paste label{display:block;font-size:13.5px;color:var(--mute);margin:12px 0 6px}
+.hint{font-size:13px;color:var(--mute);margin:8px 0 0}
+.row{display:flex;gap:10px;flex-wrap:wrap}
+
+/* results */
+#out{margin-top:56px;--tier:#ffa03c}
 #out[hidden]{display:none}
-.card{background:var(--card);border:1.5px solid var(--line);border-radius:18px;padding:26px 24px}
-.card .who{font-family:"Bricolage Grotesque",sans-serif;font-weight:500;color:var(--mute)}
-.num{font-size:clamp(72px,22vw,128px);font-weight:800;line-height:.95;letter-spacing:-.04em;margin:4px 0}
-.num small{font-size:.28em;color:var(--mute);letter-spacing:0;font-weight:500}
-.verdict{font-family:"Bricolage Grotesque",sans-serif;font-size:22px;font-weight:800;margin:4px 0 16px}
-.meter{display:grid;grid-template-columns:repeat(20,1fr);gap:3px;margin:0 0 18px}
-.meter i{height:18px;border-radius:3px;background:var(--chip)}
-.tells{display:flex;gap:8px;flex-wrap:wrap;margin:0;padding:0;list-style:none}
-.tells li,.pill{background:var(--chip);border-radius:99px;padding:3px 12px;font-size:14.5px;font-family:"Bricolage Grotesque",sans-serif}
-.brand{margin-top:18px;font-size:13.5px;color:var(--mute);font-family:"Bricolage Grotesque",sans-serif}
-h2{font-size:24px;margin:40px 0 12px}
-.post{border-top:1.5px solid var(--line);padding:14px 0}
-.post p{margin:0 0 8px;font-style:italic}
-.post .top{display:flex;justify-content:space-between;gap:12px;align-items:baseline}
-.post b{font-family:"Bricolage Grotesque",sans-serif;font-size:22px}
-.foot{color:var(--mute);font-size:14.5px;margin-top:36px}
+.grid{display:grid;grid-template-columns:minmax(0,1fr) 400px;gap:28px;align-items:start}
+.sidecol{grid-column:2;grid-row:1/span 3;position:sticky;top:18px}
+.main{grid-column:1;min-width:0}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:20px;padding:22px}
+
+/* profile */
+.profile{display:flex;gap:16px;align-items:flex-start}
+.av{width:76px;height:76px;border-radius:50%;flex:none;background:linear-gradient(135deg,#2a2f45,#171a28);object-fit:cover;border:2px solid var(--line);display:grid;place-items:center;font:700 30px var(--disp);color:#fff;overflow:hidden}
+.av img{width:100%;height:100%;object-fit:cover;display:block}
+.pname{font:700 22px/1.2 var(--disp);display:flex;align-items:center;gap:7px;flex-wrap:wrap;word-break:break-word}
+.pname svg{width:20px;height:20px;flex:none}
+.phandle{color:var(--mute);font-size:15px}
+.bio{margin:8px 0 0;font-size:15px;color:#cfd3df;overflow-wrap:anywhere;white-space:pre-line}
+.counts{display:flex;gap:16px;margin:10px 0 0;font-size:14px;color:var(--mute)}
+.counts b{color:var(--ink);font-weight:600}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:18px 0 0}
+.stat{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:12px 14px}
+.stat b{display:block;font:700 26px var(--disp);letter-spacing:-.02em}
+.stat span{font-size:12.5px;color:var(--mute)}
+h2{font:700 22px var(--disp);letter-spacing:-.01em;margin:0}
+.sec{margin-top:30px}
+.sechead{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:14px}
+.bars{display:grid;gap:10px;margin-top:14px}
+.bar{display:grid;grid-template-columns:150px 1fr 34px;gap:12px;align-items:center;font-size:14px}
+.bar i{display:block;height:8px;border-radius:9px;background:var(--panel2);overflow:hidden}
+.bar i u{display:block;height:100%;border-radius:9px;background:linear-gradient(90deg,var(--tier),var(--tier2));text-decoration:none}
+.bar em{font-style:normal;color:var(--mute);text-align:right}
+.switch{display:inline-flex;align-items:center;gap:10px;font-size:14px;color:var(--mute);cursor:pointer;user-select:none}
+.switch input{position:absolute;opacity:0}
+.switch i{width:38px;height:22px;border-radius:99px;background:var(--panel2);border:1px solid var(--line);position:relative;transition:.2s}
+.switch i:after{content:"";position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:50%;background:#fff;transition:.2s}
+.switch input:checked+i{background:var(--tier);border-color:var(--tier)}
+.switch input:checked+i:after{transform:translateX(16px);background:#0b0c12}
+.switch input:focus-visible+i{outline:2px solid #fff;outline-offset:2px}
+.post{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:16px 18px;margin-bottom:12px}
+.post .top{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:8px}
+.kind{font:600 11.5px var(--disp);letter-spacing:.08em;text-transform:uppercase;padding:3px 9px;border-radius:99px;background:var(--panel2);border:1px solid var(--line)}
+.kind.reply{color:#9bb8ff}.kind.post{color:#ffd28a}
+.sc{font:700 15px var(--disp);padding:3px 10px;border-radius:99px;color:#0b0c12}
+.when{color:var(--mute);font-size:13px}
+.post a.open{margin-left:auto;font-size:13px;color:var(--mute);text-decoration:none;border-bottom:1px solid var(--line)}
+.post a.open:hover{color:var(--ink)}
+.post p{margin:0 0 10px;font-size:15px;overflow-wrap:anywhere;white-space:pre-line;display:-webkit-box;-webkit-line-clamp:5;-webkit-box-orient:vertical;overflow:hidden}
+.post p.open{-webkit-line-clamp:unset;display:block}
+.why{display:flex;gap:6px;flex-wrap:wrap}
+.chip{font-size:12.5px;padding:3px 10px;border-radius:99px;background:rgba(255,255,255,.06);border:1px solid var(--line);color:#d5d9e6}
+.chip.bad{background:color-mix(in srgb,var(--tier) 16%,transparent);border-color:color-mix(in srgb,var(--tier) 45%,transparent)}
+.empty{padding:26px;text-align:center;color:var(--mute);border:1px dashed var(--line);border-radius:16px}
+.more{width:100%;margin-top:4px}
+.foot{color:var(--mute);font-size:13px;margin-top:26px}
+.note{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;color:var(--mute);border:1px solid var(--line);border-radius:99px;padding:3px 11px;background:var(--panel)}
+.note[hidden]{display:none}
+
+/* score card */
+.card{position:relative;overflow:hidden;border-radius:26px;padding:26px;border:1px solid rgba(255,255,255,.16);
+background:radial-gradient(420px 300px at 90% -10%,color-mix(in srgb,var(--tier) 34%,transparent),transparent 70%),radial-gradient(360px 260px at -10% 110%,color-mix(in srgb,var(--tier2) 22%,transparent),transparent 70%),linear-gradient(160deg,#10121d,#090a11);
+box-shadow:0 30px 80px -40px var(--tier)}
+.card .ph{display:flex;gap:12px;align-items:center}
+.card .av{width:54px;height:54px;font-size:22px}
+.card .pname{font-size:17px}.card .pname svg{width:17px;height:17px}
+.card .phandle{font-size:13.5px}
+.card .bio{font-size:13px;color:#aab0c2;margin:14px 0 0;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.card .counts{font-size:12.5px;margin-top:8px}
+.gauge{position:relative;width:210px;height:210px;margin:18px auto 6px}
+.gauge svg{width:100%;height:100%;transform:rotate(-90deg)}
+.gauge .mid{position:absolute;inset:0;display:grid;place-content:center;text-align:center}
+.gauge .n{font:700 74px/1 var(--disp);letter-spacing:-.05em}
+.gauge .d{font:500 14px var(--disp);color:var(--mute);margin-top:2px}
+.verdict{text-align:center;font:700 28px var(--disp);letter-spacing:-.02em;color:var(--tier)}
+.fun{text-align:center;color:#c3c8d8;font-size:14.5px;margin:6px auto 14px;max-width:32ch}
+.card .why{justify-content:center}
+.brand{display:flex;justify-content:space-between;margin-top:18px;padding-top:14px;border-top:1px solid var(--line);font:500 12.5px var(--disp);color:var(--mute)}
+.actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px}
+.actions .x{grid-column:1/-1;background:#fff;color:#000}
+.actions .btn,.actions button{padding:12px 10px}
+
+@media (max-width:900px){
+ .grid{grid-template-columns:1fr}
+ .sidecol{grid-column:1;grid-row:auto;position:static;order:-1;max-width:460px;width:100%;margin:0 auto}
+ .main{grid-column:1}
+}
+@media (max-width:560px){
+ .wrap{padding:16px 14px 56px}nav{margin-bottom:30px}
+ .search{flex-direction:column}.search .btn,.search button{width:100%}
+ .stats{grid-template-columns:repeat(2,1fr)}
+ .bar{grid-template-columns:110px 1fr 28px;gap:8px}
+ .gauge{width:180px;height:180px}.gauge .n{font-size:62px}
+ .profile{gap:12px}.av{width:62px;height:62px;font-size:25px}
+}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
 </head>
 <body>
-<main>
-<h1>How sloppy is your X feed?</h1>
-<p class="lead">Enter an X username and get a slop score from 0 to 100 for the account’s last 100 posts. Nothing is stored.</p>
+<div class="wrap">
+<nav>
+ <div class="logo"><svg viewBox="0 0 32 32" aria-hidden="true"><defs><linearGradient id="lg" x1="0" x2="1"><stop offset="0" stop-color="#7f5cff"/><stop offset="1" stop-color="#ff5a5f"/></linearGradient></defs><path d="M4 23a12 12 0 0 1 24 0" fill="none" stroke="url(#lg)" stroke-width="4" stroke-linecap="round"/><path d="M16 23l6-8" stroke="#fff" stroke-width="3.2" stroke-linecap="round"/><circle cx="16" cy="23" r="2.6" fill="#fff"/></svg>Slopmeter</div>
+ <span class="tag">Free · nothing is stored</span>
+</nav>
 
-<label for="user">X username</label>
-<div class="row"><input id="user" placeholder="@username" maxlength="16" autocomplete="off" style="max-width:260px"><button id="fetch" type="button">Score last 100 posts</button></div>
-<p class="hint" id="fstat" role="status">Replies and reposts are skipped. Only public posts are read.</p>
-<details style="margin-top:18px"><summary>Or paste posts yourself</summary>
-<label for="posts" style="margin-top:12px">Your posts</label>
-<textarea id="posts" placeholder="Paste a post here.&#10;---&#10;Paste the next post here.&#10;---&#10;And so on."></textarea>
-<p class="hint">Put a line with only <b>---</b> between posts. Without it, a blank line separates posts.</p>
-
-<label for="handle">Your @username (optional, shown on the card only)</label>
-<input id="handle" placeholder="@yourname" maxlength="16" autocomplete="off" style="max-width:260px">
-<p id="err" role="alert"></p>
-<div class="row" style="margin-top:6px">
-<button id="go" type="button">Score my posts</button>
-<button id="sample" type="button" class="alt">Try a sample</button>
-</div>
-
-</details>
+<header class="hero">
+ <h1>How <em>sloppy</em> is your X feed?</h1>
+ <p class="lead">Type any X username. We score their last 100 posts and replies from 0 to 100 and show you exactly what gave it away.</p>
+ <form class="search" id="form" autocomplete="off">
+  <label class="field"><span>@</span><input id="user" placeholder="username" maxlength="16" inputmode="text" autocapitalize="off" spellcheck="false" aria-label="X username"></label>
+  <button id="fetch" type="submit">Score it</button>
+ </form>
+ <p class="status" id="fstat" role="status" aria-live="polite">Public posts and replies only. Retweets are skipped.</p>
+ <details class="paste">
+  <summary>Or paste your own posts</summary>
+  <textarea id="posts" placeholder="Paste a post here.&#10;---&#10;Paste the next post here.&#10;---&#10;And so on." aria-label="Posts to score"></textarea>
+  <p class="hint">Put a line with only <b>---</b> between posts. Without it, a blank line separates posts.</p>
+  <label for="handle">@username (optional, shown on the card only)</label>
+  <input id="handle" placeholder="@yourname" maxlength="16" autocomplete="off">
+  <p class="status err" id="err" role="alert" style="text-align:left"></p>
+  <div class="row"><button id="go" type="button">Score my posts</button><button id="sample" type="button" class="ghost">Try a sample</button></div>
+ </details>
+</header>
 
 <section id="out" hidden aria-live="polite">
-<div class="card" id="card">
-<div class="who" id="cwho"></div>
-<div class="num"><span id="cnum">0</span><small>/100</small></div>
-<div class="verdict" id="cverdict"></div>
-<div class="meter" id="meter" aria-hidden="true"></div>
-<ul class="tells" id="ctells"></ul>
-<div class="brand">Slopmeter · scored in the browser</div>
-</div>
-<div class="row" style="margin-top:14px">
-<a class="btn" id="xshare" target="_blank" rel="noopener noreferrer" href="#">Share on X</a>
-<button id="copy" type="button" class="alt">Copy result text</button>
-</div>
-<p class="hint">To save the card as an image, take a screenshot of it.</p>
+ <div class="grid">
+  <aside class="sidecol">
+   <div class="card" id="card">
+    <div class="ph" id="cph">
+     <div class="av" id="cav"></div>
+     <div><div class="pname" id="cname"></div><div class="phandle" id="chandle"></div></div>
+    </div>
+    <div class="bio" id="cbio"></div>
+    <div class="counts" id="ccounts"></div>
+    <div class="gauge">
+     <svg viewBox="0 0 120 120" aria-hidden="true"><defs><linearGradient id="gg" x1="0" y1="0" x2="1" y2="1"><stop id="gs1" offset="0" stop-color="#ffa03c"/><stop id="gs2" offset="1" stop-color="#ff5a5f"/></linearGradient></defs><circle cx="60" cy="60" r="52" fill="none" stroke="rgba(255,255,255,.09)" stroke-width="10"/><circle id="ring" cx="60" cy="60" r="52" fill="none" stroke="url(#gg)" stroke-width="10" stroke-linecap="round" stroke-dasharray="326.73" stroke-dashoffset="326.73" style="transition:stroke-dashoffset 1.1s cubic-bezier(.2,.8,.2,1)"/></svg>
+     <div class="mid"><div class="n" id="cnum">0</div><div class="d">out of 100</div></div>
+    </div>
+    <div class="verdict" id="cverdict"></div>
+    <div class="fun" id="cfun"></div>
+    <div class="why" id="ctells"></div>
+    <div class="brand"><span>Slopmeter</span><span id="chost"></span></div>
+   </div>
+   <div class="actions">
+    <a class="btn x" id="xshare" target="_blank" rel="noopener noreferrer" href="#">Share on X</a>
+    <button id="copy" type="button" class="ghost">Copy text</button>
+    <button id="dl" type="button" class="ghost">Download PNG</button>
+   </div>
+  </aside>
 
-<h2>Post by post</h2>
-<div id="list"></div>
-<p class="foot">This is a fun heuristic, not proof of anything. It counts stock phrases, buzzwords, em dashes, “not X, it’s Y” lines, hashtag piles, engagement bait, one-line paragraphs and recycled openers. A high score means the writing looks templated, whether a person or a model wrote it.</p>
+  <div class="main">
+   <div class="panel">
+    <div class="profile" id="profile">
+     <div class="av" id="pav"></div>
+     <div style="min-width:0">
+      <div class="pname" id="pname"></div><div class="phandle" id="phandle"></div>
+      <div class="bio" id="pbio"></div>
+      <div class="counts" id="pcounts"></div>
+     </div>
+    </div>
+    <div class="stats" id="stats"></div>
+    <div style="margin-top:14px"><span class="note" id="cachenote" hidden></span></div>
+   </div>
+
+   <div class="sec"><h2>What gave it away</h2><div class="bars" id="bars"></div></div>
+
+   <div class="sec">
+    <div class="sechead">
+     <h2 id="listtitle">Flagged as slop</h2>
+     <label class="switch"><input type="checkbox" id="showall"><i></i><span id="showlabel">Show all posts</span></label>
+    </div>
+    <div id="list"></div>
+    <button class="ghost more" id="more" type="button" hidden>Show more</button>
+   </div>
+   <p class="foot">This is a fun heuristic, not proof of anything. It counts stock phrases, buzzwords, em dashes, “not X, it’s Y” lines, hashtag piles, engagement bait, generic praise replies, one-line paragraphs and recycled openers. A high score means the writing looks templated, whether a person or a model wrote it.</p>
+  </div>
+ </div>
 </section>
-</main>
+</div>
 
 <script>
+/*ENGINE_START*/
 const PH=["game changer","game-changer","in today’s","in today's","let’s dive","let's dive","here’s the thing","here's the thing","the truth is","let that sink in","read that again","nobody talks about","most people don’t","most people don't","here’s why","here's why","changed my life","pro tip","buckle up","plot twist","hot take","unpopular opinion","a thread","thread 🧵"];
 const BZ=/\b(unlock(ing)?|elevate|seamless(ly)?|robust|leverage|delve|tapestry|landscape|journey|revolutioni[sz]e|cutting-edge|supercharge|navigate|ever-evolving|testament|transformative|empower|synergy|holistic|paradigm)\b/gi;
 const NOT1=/\bnot (just|only|about)\b[^.\n]{2,60}\b(but|it['’]?s)\b/i;
@@ -99,6 +241,8 @@ const NOT2=/\b(it|this|that)['’]?s not\b[^.\n]{2,60}[,.;—–]\s*(it['’]?s|
 const BAIT=/follow (me )?for more|repost|retweet|\brt if|bookmark this|reply with|comment below|like if|link in (bio|comments)|dm me/i;
 const HOOK=/^(here['’]s|stop |most people|nobody|the (truth|secret|real)|unpopular|hot take|i (spent|just|built|made)|\d+ (ways|tips|lessons|things|rules))/i;
 const HOOKEMO=/[🧵👇🚀🔥💡✅⬇️📌]/u;
+const PRAISE=/^(great|good|excellent|fantastic|awesome|amazing|brilliant|powerful|solid|valid|fair|interesting|insightful)\s+(point|take|insight|thread|post|breakdown|perspective|share|read)|^(this is|that['’]?s|so|very|such a)\s+(so |a |an )?(true|great|good|powerful|insightful|spot on|facts|important)|couldn['’]?t agree more|well said|spot on\b|\b100%|^absolutely\b|totally agree|love this\b|this resonates|\bso true\b|exactly this|thanks for sharing|this hits\b/i;
+const ASKQ=/\b(what do you think|thoughts\?|agree\?|what['’]s your take|who else)\b[^]*\?\s*$/i;
 const SAMPLE=`Here’s the thing nobody talks about: most founders don’t fail because of the product. It’s not a talent problem — it’s a consistency problem.
 
 Let that sink in. 🚀
@@ -129,7 +273,11 @@ Single.
 
 Time.`;
 
-function scorePost(t){
+function cleanText(t){return String(t).replace(/https?:\/\/\S+/g,"").replace(/^(\s*@\w+)+\s*/,"").trim()}
+function scorePost(raw){
+  const t=cleanText(raw);
+  const words=t.split(/\s+/).filter(Boolean).length;
+  if(words<3)return{score:0,tells:[]};
   let s=0;const tells=[];const add=(n,l)=>{s+=n;tells.push(l)};
   const low=t.toLowerCase();
   const ph=PH.filter(p=>low.includes(p)).length; if(ph)add(Math.min(36,ph*12),"Stock phrases");
@@ -139,6 +287,8 @@ function scorePost(t){
   const ht=(t.match(/#\w+/g)||[]).length; if(ht>2)add(Math.min(16,(ht-2)*8),"Hashtag pile");
   if(HOOKEMO.test(t)||((t.match(/\p{Extended_Pictographic}/gu)||[]).length>3))add(8,"Emoji hooks");
   if(BAIT.test(t))add(16,"Engagement bait");
+  if(words<=30&&PRAISE.test(t))add(14,"Generic praise");
+  if(ASKQ.test(t))add(6,"Engagement question");
   const lines=t.split("\n").map(x=>x.trim()).filter(Boolean);
   const avg=lines.length?lines.reduce((a,l)=>a+l.split(/\s+/).length,0)/lines.length:0;
   if(lines.length>=5&&avg<8)add(12,"One-line paragraphs");
@@ -146,91 +296,347 @@ function scorePost(t){
   if(HOOK.test(lines[0]||""))add(10,"Hook opener");
   return{score:Math.min(100,s),tells};
 }
-function verdict(n){
-  return n<15?"Human. Typos and all.":n<35?"Mostly human":n<55?"Some slop":n<75?"Slop-adjacent":"Peak slop";
-}
-function split(raw){
-  const parts=/^\s*-{3,}\s*$/m.test(raw)?raw.split(/^\s*-{3,}\s*$/m):raw.split(/\n\s*\n/);
-  return parts.map(x=>x.trim()).filter(Boolean).slice(0,100);
-}
-function el(tag,cls,txt){const e=document.createElement(tag);if(cls)e.className=cls;if(txt!=null)e.textContent=txt;return e}
-let lastText="";
-function run(){
-  const err=document.getElementById("err");err.textContent="";
-  const posts=split(document.getElementById("posts").value);
-  if(!posts.length){err.textContent="Paste at least one post first.";return}
-  const res=posts.map(p=>({text:p,...scorePost(p)}));
-  let avg=res.reduce((a,r)=>a+r.score,0)/res.length;
-  const globalTells=[];
-  if(res.length>=3){
-    const open=posts.map(p=>p.toLowerCase().split(/\s+/).slice(0,2).join(" "));
-    const c={};open.forEach(o=>c[o]=(c[o]||0)+1);
-    if(Math.max(...Object.values(c))/res.length>=.3){avg+=8;globalTells.push("Recycled openers")}
-  }
-  const score=Math.round(Math.min(100,avg));
+const FLAG_AT=20;
+const TIERS=[
+ {max:14,name:"Certified human",c1:"#34e8a0",c2:"#1fb5c9",fun:["Typos, tangents and zero buzzwords. Suspiciously real.","This feed has a pulse. No templates detected.","Someone actually typed this with their thumbs."]},
+ {max:29,name:"Mostly human",c1:"#8be35a",c2:"#34e8a0",fun:["A few stock phrases slipped in, but a human is clearly driving.","Mostly organic, lightly seasoned with LinkedIn.","Real voice, with the occasional hype word."]},
+ {max:44,name:"Some slop",c1:"#f5d547",c2:"#ffa03c",fun:["Starting to smell like a content calendar.","Half human, half hook-problem-solution.","Not a bot, but the template is showing."]},
+ {max:59,name:"Slop-adjacent",c1:"#ffa03c",c2:"#ff5a5f",fun:["Em dashes everywhere. Did ChatGPT learn to tweet from you?","Lots of “here’s the thing” energy in this feed.","One more “let that sink in” and we need an intervention."]},
+ {max:79,name:"Slop machine",c1:"#ff5a5f",c2:"#ff4fd8",fun:["This feed runs on prompts and pure vibes.","Templates all the way down. Respect the grind.","Rocket emoji count: critical."]},
+ {max:100,name:"Peak slop",c1:"#ff4fd8",c2:"#7f5cff",fun:["Maximum slop reached. Please hydrate.","If this is a human, they are in a long-term relationship with a prompt.","The slopmeter just left the building."]}
+];
+function tierOf(n){return TIERS.find(t=>n<=t.max)||TIERS[TIERS.length-1]}
+function hashStr(s){let h=0;for(let i=0;i<s.length;i++)h=(h*31+s.charCodeAt(i))|0;return Math.abs(h)}
+function funLine(score,seed){const t=tierOf(score);return t.fun[hashStr(String(seed)+score)%t.fun.length]}
+function analyze(items){
+  const res=items.map(it=>{const r=scorePost(it.text);return{...it,score:r.score,tells:r.tells.slice()}});
+  const op=res.map(r=>{const w=cleanText(r.text).toLowerCase().split(/\s+/).filter(Boolean);return w.length>=3?w.slice(0,3).join(" "):""});
+  const cnt={};op.forEach(o=>{if(o)cnt[o]=(cnt[o]||0)+1});
+  res.forEach((r,i)=>{if(op[i]&&cnt[op[i]]>=3&&cnt[op[i]]/res.length>=.1){r.score=Math.min(100,r.score+8);r.tells.push("Recycled opener")}});
+  const score=res.length?Math.round(res.reduce((a,r)=>a+r.score,0)/res.length):0;
   const tally={};res.forEach(r=>r.tells.forEach(t=>tally[t]=(tally[t]||0)+1));
-  globalTells.forEach(t=>tally[t]=99);
-  const top=Object.entries(tally).sort((a,b)=>b[1]-a[1]).slice(0,5).map(x=>x[0]);
-  let h=document.getElementById("handle").value.trim().replace(/[^\w@]/g,"");
-  if(h&&h[0]!=="@")h="@"+h;
-  document.getElementById("cwho").textContent=h?h+"’s X slop score":"X slop score";
-  document.getElementById("cnum").textContent=score;
-  const v=verdict(score);
-  document.getElementById("cverdict").textContent=v;
-  const m=document.getElementById("meter");m.textContent="";
-  const filled=Math.round(score/5);
-  for(let i=0;i<20;i++){
-    const b=document.createElement("i");
-    if(i<filled)b.style.background="hsl("+Math.round(215-120*i/19)+" 62% 48%)";
-    m.appendChild(b);
-  }
-  const tl=document.getElementById("ctells");tl.textContent="";
-  (top.length?top:["No slop tells found"]).forEach(t=>tl.appendChild(el("li",null,t)));
-  const list=document.getElementById("list");list.textContent="";
-  res.forEach((r,i)=>{
-    const d=el("div","post");
-    const top=el("div","top");
-    top.appendChild(el("b",null,r.score+"/100"));
-    top.appendChild(el("span","pill","Post "+(i+1)));
-    d.appendChild(top);
-    d.appendChild(el("p",null,r.text.length>160?r.text.slice(0,160).replace(/\s+/g," ")+"…":r.text.replace(/\s+/g," ")));
-    const ul=el("ul","tells");
-    (r.tells.length?r.tells:["Clean"]).forEach(t=>ul.appendChild(el("li",null,t)));
-    d.appendChild(ul);list.appendChild(d);
-  });
-  lastText=(h?h+": ":"")+"My X slop score is "+score+"/100 ("+v+"). Check yours with Slopmeter.";
-  document.getElementById("xshare").href="https://x.com/intent/post?text="+encodeURIComponent(lastText);
-  const out=document.getElementById("out");out.hidden=false;
-  out.scrollIntoView({behavior:"smooth",block:"start"});
+  const tells=Object.entries(tally).sort((a,b)=>b[1]-a[1]);
+  const posts=res.filter(r=>!r.isReply),replies=res.filter(r=>r.isReply);
+  const avg=a=>a.length?Math.round(a.reduce((x,r)=>x+r.score,0)/a.length):null;
+  return{res,score,tells,flagged:res.filter(r=>r.score>=FLAG_AT),nPosts:posts.length,nReplies:replies.length,avgPosts:avg(posts),avgReplies:avg(replies)};
 }
-document.getElementById("fetch").onclick=async()=>{
-  const st=document.getElementById("fstat"),b=document.getElementById("fetch");
-  const u=document.getElementById("user").value.trim().replace(/^@/,"");
-  if(!/^\w{1,15}$/.test(u)){st.textContent="Enter a valid X username.";return}
-  b.disabled=true;st.textContent="Loading posts…";
+function splitPaste(raw){
+  const parts=/^\s*-{3,}\s*$/m.test(raw)?raw.split(/^\s*-{3,}\s*$/m):raw.split(/\n\s*\n/);
+  return parts.map(x=>x.trim()).filter(Boolean).slice(0,100).map(text=>({id:"",text,isReply:false,createdAt:null}));
+}
+/*ENGINE_END*/
+
+/* ---------- UI ---------- */
+const $=id=>document.getElementById(id);
+const el=(tag,cls,txt)=>{const e=document.createElement(tag);if(cls)e.className=cls;if(txt!=null)e.textContent=txt;return e};
+const fmt=n=>new Intl.NumberFormat("en",{notation:"compact",maximumFractionDigits:n>=1e5?0:1}).format(n);
+const HOST=()=>location.host;
+const CHECK_PATH="M5 12.5l4.2 4.2L19 7";
+let state=null,showAll=false,shown=20;
+
+function verifiedSvg(){
+  const s=document.createElementNS("http://www.w3.org/2000/svg","svg");s.setAttribute("viewBox","0 0 24 24");s.setAttribute("aria-label","Verified");s.setAttribute("role","img");
+  s.innerHTML='<circle cx="12" cy="12" r="11" fill="#1d9bf0"/><path d="'+CHECK_PATH+'" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>';
+  return s;
+}
+function setAvatar(box,profile){
+  box.textContent="";
+  const letter=((profile.name||profile.username||"?").trim()[0]||"?").toUpperCase();
+  if(profile.avatar){
+    const img=new Image();img.alt="";img.referrerPolicy="no-referrer";img.src=profile.avatar;
+    img.onerror=()=>{box.textContent=letter};
+    box.appendChild(img);
+  }else box.textContent=letter;
+}
+function fillProfile(prefix,p,compactCounts){
+  setAvatar($(prefix+"av"),p);
+  const nm=$(prefix+"name");nm.textContent="";
+  nm.appendChild(document.createTextNode(p.name||(p.username?"@"+p.username:"X slop score")));
+  if(p.verified)nm.appendChild(verifiedSvg());
+  $(prefix+"handle").textContent=p.name&&p.username?"@"+p.username:"";
+  const bio=$(prefix+"bio");bio.textContent=p.bio||"";bio.hidden=!p.bio;
+  const c=$(prefix+"counts");c.textContent="";
+  [["followers","Followers"],["following","Following"]].forEach(([k,l])=>{
+    if(typeof p[k]==="number"){const s=el("span");const b=el("b",null,fmt(p[k]));s.append(b," "+l);c.appendChild(s)}
+  });
+  c.hidden=!c.childNodes.length;
+}
+function chip(t,bad){return el("span","chip"+(bad?" bad":""),t)}
+function setTier(a){
+  const t=tierOf(a.score);
+  const o=$("out");o.style.setProperty("--tier",t.c1);o.style.setProperty("--tier2",t.c2);
+  $("gs1").setAttribute("stop-color",t.c1);$("gs2").setAttribute("stop-color",t.c2);
+  return t;
+}
+function shareText(p,a){
+  const t=tierOf(a.score);
+  const who=p.username?"@"+p.username+"’s":"My";
+  return who+" X slop score: "+a.score+"/100 ("+t.name+"). "+funLine(a.score,p.username||"")+" What’s yours?";
+}
+function render(profile,items,meta){
+  const a=analyze(items);
+  state={profile,a,items,meta};
+  const t=setTier(a);
+  fillProfile("p",profile);
+  $("profile").hidden=!(profile.username||profile.name);
+  // card
+  fillProfile("c",profile);
+  $("cph").hidden=!(profile.username||profile.name);
+  $("cverdict").textContent=t.name;
+  $("cfun").textContent=funLine(a.score,profile.username||"");
+  $("chost").textContent=HOST();
+  const ct=$("ctells");ct.textContent="";
+  a.tells.slice(0,4).forEach(([n])=>ct.appendChild(chip(n,true)));
+  if(!a.tells.length)ct.appendChild(chip("No slop tells found"));
+  // gauge animate
+  const ring=$("ring"),num=$("cnum");
+  const reduce=matchMedia("(prefers-reduced-motion: reduce)").matches;
+  ring.style.transition="none";ring.setAttribute("stroke-dashoffset",326.73);
+  void ring.getBoundingClientRect();
+  ring.style.transition="";
+  requestAnimationFrame(()=>ring.setAttribute("stroke-dashoffset",(326.73*(1-a.score/100)).toFixed(2)));
+  if(reduce)num.textContent=a.score;else{
+    const t0=performance.now(),D=1000;
+    (function tick(now){const k=Math.min(1,(now-t0)/D);num.textContent=Math.round(a.score*(1-Math.pow(1-k,3)));if(k<1)requestAnimationFrame(tick);else num.textContent=a.score})(t0);
+  }
+  // share
+  const txt=shareText(profile,a);
+  state.text=txt;
+  $("xshare").href="https://x.com/intent/post?text="+encodeURIComponent(txt)+"&url="+encodeURIComponent(location.origin);
+  // stats
+  const st=$("stats");st.textContent="";
+  const S=(v,l)=>{const d=el("div","stat");d.appendChild(el("b",null,String(v)));d.appendChild(el("span",null,l));st.appendChild(d)};
+  S(items.length,"scored");
+  S(a.flagged.length,"flagged as slop");
+  S(a.avgPosts==null?"–":a.avgPosts,"avg · posts ("+a.nPosts+")");
+  S(a.avgReplies==null?"–":a.avgReplies,"avg · replies ("+a.nReplies+")");
+  if(!a.nReplies&&!a.nPosts){} 
+  // cache note
+  const cn=$("cachenote");
+  if(meta&&meta.cached){cn.hidden=false;cn.textContent="Cached result"+(meta.fetchedAt?" · fetched "+ago(meta.fetchedAt):"")+" · no credit used"}
+  else cn.hidden=true;
+  // bars
+  const bars=$("bars");bars.textContent="";
+  const mx=a.tells.length?a.tells[0][1]:1;
+  if(!a.tells.length)bars.appendChild(el("div","empty","No slop tells found. Suspiciously clean."));
+  a.tells.slice(0,6).forEach(([n,c])=>{
+    const r=el("div","bar");r.appendChild(el("span",null,n));
+    const i=el("i");const u=el("u");u.style.width=Math.max(6,c/mx*100)+"%";i.appendChild(u);r.appendChild(i);r.appendChild(el("em",null,String(c)));bars.appendChild(r);
+  });
+  showAll=false;$("showall").checked=false;shown=20;
+  renderList();
+  $("out").hidden=false;
+  $("out").scrollIntoView({behavior:reduce?"auto":"smooth",block:"start"});
+}
+function ago(iso){
+  const m=Math.round((Date.now()-new Date(iso))/60000);
+  if(!isFinite(m)||m<1)return "just now";if(m<60)return m+" min ago";const h=Math.round(m/60);return h<24?h+" h ago":Math.round(h/24)+" d ago";
+}
+function renderList(){
+  if(!state)return;
+  const a=state.a,uname=state.profile.username;
+  const list=showAll?a.res:a.flagged.slice().sort((x,y)=>y.score-x.score);
+  $("listtitle").textContent=showAll?"All posts and replies":"Flagged as slop";
+  $("showlabel").textContent=showAll?"Showing all ("+a.res.length+")":"Show all posts ("+a.res.length+")";
+  const box=$("list");box.textContent="";
+  if(!list.length)box.appendChild(el("div","empty","Nothing flagged. This feed passes the sniff test."));
+  list.slice(0,shown).forEach(r=>{
+    const d=el("div","post");const top=el("div","top");
+    top.appendChild(el("span","kind "+(r.isReply?"reply":"post"),r.isReply?"Reply":"Post"));
+    const sc=el("span","sc",r.score+"/100");const tt=tierOf(r.score);sc.style.background=tt.c1;top.appendChild(sc);
+    if(r.createdAt){const dt=new Date(r.createdAt);if(!isNaN(dt))top.appendChild(el("span","when",dt.toLocaleDateString("en",{month:"short",day:"numeric",year:"numeric"})))}
+    if(r.id&&uname&&/^\w+$/.test(uname)&&/^\d+$/.test(r.id)){
+      const l=el("a","open","Open on X ↗");l.href="https://x.com/"+uname+"/status/"+r.id;l.target="_blank";l.rel="noopener noreferrer";top.appendChild(l);
+    }
+    d.appendChild(top);
+    const p=el("p",null,r.text);p.title="Click to expand";p.onclick=()=>p.classList.toggle("open");d.appendChild(p);
+    const w=el("div","why");
+    (r.tells.length?r.tells:["Clean"]).forEach(x=>w.appendChild(chip(x,r.tells.length>0)));
+    d.appendChild(w);box.appendChild(d);
+  });
+  $("more").hidden=list.length<=shown;
+  $("more").textContent="Show more ("+(list.length-shown)+" left)";
+}
+$("showall").onchange=e=>{showAll=e.target.checked;shown=20;renderList()};
+$("more").onclick=()=>{shown+=20;renderList()};
+
+/* ---------- 24h localStorage cache ---------- */
+const LS="slopmeter:v2:",TTL=24*3600*1000;
+function lsGet(u){
+  try{const v=JSON.parse(localStorage.getItem(LS+u)||"null");if(v&&Date.now()-v.at<TTL&&v.data&&Array.isArray(v.data.items))return v;}catch(_){}
+  return null;
+}
+function lsSet(u,data){
+  try{
+    const keys=[];for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k&&k.startsWith(LS))keys.push(k)}
+    keys.forEach(k=>{try{const v=JSON.parse(localStorage.getItem(k));if(!v||Date.now()-v.at>=TTL)localStorage.removeItem(k)}catch(_){localStorage.removeItem(k)}});
+    localStorage.setItem(LS+u,JSON.stringify({at:Date.now(),data}));
+  }catch(_){}
+}
+
+/* ---------- fetch by username ---------- */
+function setStatus(msg,err,spin){
+  const s=$("fstat");s.className="status"+(err?" err":"");s.textContent="";
+  if(spin){s.appendChild(el("span","spin"))}
+  s.appendChild(document.createTextNode(msg));
+}
+function profileFrom(j,u){
+  const p=Object.assign({},j.profile||{});
+  p.username=p.username||j.username||u;
+  if(!p.name&&j.name)p.name=j.name;
+  if(!p.avatar&&j.avatar)p.avatar=j.avatar;
+  return p;
+}
+let busy=false;
+async function lookup(){
+  if(busy)return;
+  const u=$("user").value.trim().replace(/^@/,"").toLowerCase();
+  if(!/^\w{1,15}$/.test(u)){setStatus("Enter a valid X username (letters, numbers, underscore).",true);return}
+  $("user").value=u;
+  const hit=lsGet(u);
+  if(hit){
+    setStatus("Loaded from your device’s 24h cache. No request made.");
+    render(profileFrom(hit.data,u),hit.data.items,{cached:true,fetchedAt:hit.data.fetchedAt||new Date(hit.at).toISOString()});
+    return;
+  }
+  busy=true;$("fetch").disabled=true;setStatus("Fetching the last 100 posts and replies…",false,true);
   try{
     const r=await fetch("/api/posts?u="+encodeURIComponent(u));
-    const j=await r.json();
-    if(!r.ok)throw new Error(j.error||"Could not load posts.");
-    document.getElementById("posts").value=j.posts.join("\n---\n");
-    document.getElementById("handle").value="@"+u;
-    st.textContent="Scored "+j.posts.length+" posts from @"+u+".";
-    run();
-  }catch(e){st.textContent=e.message}
-  b.disabled=false;
-};
-document.getElementById("go").onclick=run;
-document.getElementById("sample").onclick=()=>{document.getElementById("posts").value=SAMPLE;run()};
-document.getElementById("copy").onclick=async e=>{
-  const b=e.currentTarget;
-  try{await navigator.clipboard.writeText(lastText);b.textContent="Copied"}
+    let j=null;try{j=await r.json()}catch(_){}
+    if(!r.ok||!j)throw new Error((j&&j.error)||(r.status===504?"The request timed out. Try again.":"Could not load posts (HTTP "+r.status+")."));
+    if(!Array.isArray(j.items)||!j.items.length)throw new Error("No public posts found for @"+u+".");
+    const xc=(r.headers.get("x-vercel-cache")||"").toUpperCase();
+    const cached=!!j.cached||xc==="HIT"||xc==="STALE";
+    if(!j.partial)lsSet(u,j);
+    setStatus("Scored "+j.items.length+" posts and replies from @"+u+".");
+    render(profileFrom(j,u),j.items,{cached,fetchedAt:j.fetchedAt});
+  }catch(e){setStatus(e.message||"Something went wrong.",true)}
+  busy=false;$("fetch").disabled=false;
+}
+$("form").addEventListener("submit",e=>{e.preventDefault();lookup()});
+
+/* ---------- paste fallback ---------- */
+function runPaste(){
+  const err=$("err");err.textContent="";
+  const items=splitPaste($("posts").value);
+  if(!items.length){err.textContent="Paste at least one post first.";return}
+  let h=$("handle").value.trim().replace(/[^\w]/g,"");
+  setStatus("Scored "+items.length+" pasted post"+(items.length>1?"s":"")+".");
+  render({username:h||"",},items,null);
+}
+$("go").onclick=runPaste;
+$("sample").onclick=()=>{$("posts").value=SAMPLE;runPaste()};
+
+/* ---------- copy / share / PNG ---------- */
+$("copy").onclick=async e=>{
+  const b=e.currentTarget;if(!state)return;
+  const txt=state.text+" "+location.origin;
+  try{await navigator.clipboard.writeText(txt);b.textContent="Copied ✓"}
   catch(_){
-    const t=document.createElement("textarea");t.value=lastText;document.body.appendChild(t);t.select();
-    try{document.execCommand("copy");b.textContent="Copied"}catch(_){b.textContent="Select and copy from the card"}
+    const t=document.createElement("textarea");t.value=txt;document.body.appendChild(t);t.select();
+    try{document.execCommand("copy");b.textContent="Copied ✓"}catch(_){b.textContent="Copy failed"}
     t.remove();
   }
-  setTimeout(()=>b.textContent="Copy result text",1800);
+  setTimeout(()=>b.textContent="Copy text",1800);
 };
+function loadImg(src){
+  return new Promise(res=>{
+    const i=new Image();i.crossOrigin="anonymous";i.referrerPolicy="no-referrer";
+    const to=setTimeout(()=>res(null),5000);
+    i.onload=()=>{clearTimeout(to);res(i)};i.onerror=()=>{clearTimeout(to);res(null)};i.src=src;
+  });
+}
+function rr(c,x,y,w,h,r){c.beginPath();c.moveTo(x+r,y);c.arcTo(x+w,y,x+w,y+h,r);c.arcTo(x+w,y+h,x,y+h,r);c.arcTo(x,y+h,x,y,r);c.arcTo(x,y,x+w,y,r);c.closePath()}
+function wrap(c,text,x,y,maxW,lh,maxLines){
+  const words=text.replace(/\s+/g," ").split(" ");let line="",n=0;
+  for(let i=0;i<words.length;i++){
+    const test=line?line+" "+words[i]:words[i];
+    if(c.measureText(test).width>maxW&&line){
+      n++;if(n>=maxLines){c.fillText(line.replace(/\s*\S*$/,"")+"…",x,y);return y+lh}
+      c.fillText(line,x,y);y+=lh;line=words[i];
+    }else line=test;
+  }
+  if(line){c.fillText(line,x,y);y+=lh}
+  return y;
+}
+async function drawCard(){
+  const W=1200,H=675,{profile:p,a}=state,t=tierOf(a.score);
+  try{await Promise.all([document.fonts.load('700 80px "Space Grotesk"'),document.fonts.load('500 24px "Inter"')])}catch(_){}
+  const D='"Space Grotesk","Inter",system-ui,sans-serif',B='"Inter",system-ui,sans-serif';
+  const cv=document.createElement("canvas");cv.width=W;cv.height=H;const c=cv.getContext("2d");
+  let g=c.createLinearGradient(0,0,W,H);g.addColorStop(0,"#11131f");g.addColorStop(1,"#08090f");c.fillStyle=g;c.fillRect(0,0,W,H);
+  g=c.createRadialGradient(W*.86,-40,10,W*.86,-40,640);g.addColorStop(0,t.c1+"66");g.addColorStop(1,"transparent");c.fillStyle=g;c.fillRect(0,0,W,H);
+  g=c.createRadialGradient(0,H+40,10,0,H+40,520);g.addColorStop(0,t.c2+"40");g.addColorStop(1,"transparent");c.fillStyle=g;c.fillRect(0,0,W,H);
+  c.strokeStyle="rgba(255,255,255,.07)";c.lineWidth=1;
+  for(let x=0;x<W;x+=48){c.beginPath();c.moveTo(x,0);c.lineTo(x,H);c.stroke()}
+  for(let y=0;y<H;y+=48){c.beginPath();c.moveTo(0,y);c.lineTo(W,y);c.stroke()}
+  c.strokeStyle="rgba(255,255,255,.18)";c.lineWidth=2;rr(c,1,1,W-2,H-2,34);c.stroke();
+
+  const L=70;let y=70;
+  const hasProfile=!!(p.username||p.name);
+  if(hasProfile){
+    const R=44,cx=L+R,cy=y+R;
+    c.save();c.beginPath();c.arc(cx,cy,R,0,Math.PI*2);c.closePath();c.clip();
+    const img=p.avatar?await loadImg(p.avatar):null;
+    if(img)c.drawImage(img,cx-R,cy-R,R*2,R*2);
+    else{c.fillStyle="#2a2f45";c.fillRect(cx-R,cy-R,R*2,R*2);c.fillStyle="#fff";c.font="700 40px "+D;c.textAlign="center";c.textBaseline="middle";c.fillText(((p.name||p.username||"?")[0]||"?").toUpperCase(),cx,cy+2)}
+    c.restore();c.strokeStyle="rgba(255,255,255,.25)";c.lineWidth=2;c.beginPath();c.arc(cx,cy,R,0,Math.PI*2);c.stroke();
+    c.textAlign="left";c.textBaseline="alphabetic";
+    const tx=L+R*2+22;
+    c.fillStyle="#fff";c.font="700 36px "+D;
+    let name=p.name||"@"+p.username;
+    while(c.measureText(name).width>560&&name.length>3)name=name.slice(0,-2);
+    c.fillText(name,tx,y+40);
+    if(p.verified){const nw=c.measureText(name).width,bx=tx+nw+14,by=y+14;
+      c.fillStyle="#1d9bf0";c.beginPath();c.arc(bx+13,by+13,13,0,Math.PI*2);c.fill();
+      c.strokeStyle="#fff";c.lineWidth=3;c.lineCap="round";c.lineJoin="round";c.beginPath();c.moveTo(bx+7,by+14);c.lineTo(bx+11.5,by+18.5);c.lineTo(bx+19.5,by+9);c.stroke()}
+    c.fillStyle="#8e95a8";c.font="500 24px "+B;
+    const sub=[];if(p.name&&p.username)sub.push("@"+p.username);
+    if(typeof p.followers==="number")sub.push(fmt(p.followers)+" followers");
+    if(typeof p.following==="number")sub.push(fmt(p.following)+" following");
+    c.fillText(sub.join("  ·  "),tx,y+78);
+    y+=R*2+34;
+    if(p.bio){c.fillStyle="#aab0c2";c.font="400 22px "+B;y=wrap(c,p.bio,L,y+6,560,31,2)}
+  }else{
+    c.fillStyle="#fff";c.font="700 36px "+D;c.fillText("X slop score",L,y+40);y+=80;
+  }
+  // verdict + fun
+  const vy=Math.max(y+60,H-300);
+  c.fillStyle=t.c1;c.font="700 66px "+D;c.fillText(t.name,L,vy);
+  c.fillStyle="#c3c8d8";c.font="400 27px "+B;
+  const fy=wrap(c,funLine(a.score,p.username||""),L,vy+48,560,38,2);
+  // chips
+  let cx=L,cy=Math.min(fy+14,H-120);c.font="500 21px "+B;
+  (a.tells.length?a.tells.slice(0,3).map(x=>x[0]):["No slop tells found"]).forEach(n=>{
+    const w=c.measureText(n).width+30;if(cx+w>L+580)return;
+    c.fillStyle=t.c1+"28";rr(c,cx,cy,w,38,19);c.fill();c.strokeStyle=t.c1+"80";c.lineWidth=1.5;c.stroke();
+    c.fillStyle="#e6e9f2";c.fillText(n,cx+15,cy+26);cx+=w+10;
+  });
+  // gauge
+  const gx=900,gy=300,gr=170;
+  c.lineCap="round";c.lineWidth=28;c.strokeStyle="rgba(255,255,255,.09)";c.beginPath();c.arc(gx,gy,gr,0,Math.PI*2);c.stroke();
+  const gg=c.createLinearGradient(gx-gr,gy-gr,gx+gr,gy+gr);gg.addColorStop(0,t.c1);gg.addColorStop(1,t.c2);
+  c.strokeStyle=gg;c.beginPath();c.arc(gx,gy,gr,-Math.PI/2,-Math.PI/2+Math.PI*2*Math.max(.005,a.score/100));c.stroke();
+  c.textAlign="center";c.fillStyle="#fff";c.font="700 190px "+D;c.fillText(String(a.score),gx,gy+62);
+  c.fillStyle="#8e95a8";c.font="500 28px "+D;c.fillText("out of 100",gx,gy+112);
+  // footer
+  c.textAlign="left";c.fillStyle="#8e95a8";c.font="600 24px "+D;c.fillText("Slopmeter",L,H-48);
+  c.textAlign="right";c.fillText(HOST(),W-L,H-48);
+  c.textAlign="left";
+  return cv;
+}
+$("dl").onclick=async e=>{
+  if(!state)return;const b=e.currentTarget;b.disabled=true;const old=b.textContent;b.textContent="Drawing…";
+  try{
+    const cv=await drawCard();
+    const blob=await new Promise((res,rej)=>cv.toBlob(x=>x?res(x):rej(new Error("toBlob")),"image/png"));
+    const a=document.createElement("a");a.href=URL.createObjectURL(blob);
+    a.download="slopmeter-"+(state.profile.username||"score")+".png";document.body.appendChild(a);a.click();a.remove();
+    setTimeout(()=>URL.revokeObjectURL(a.href),4000);b.textContent="Saved ✓";
+  }catch(_){b.textContent="Failed, try again"}
+  setTimeout(()=>{b.textContent=old;b.disabled=false},1800);
+};
+window.__drawCard=drawCard;
 </script>
 </body>
-  </html>
+</html>
