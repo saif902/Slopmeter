@@ -277,7 +277,7 @@ Single.
 Time.`;
 
 function cleanText(t){return String(t).replace(/https?:\/\/\S+/g,"").replace(/^(\s*@\w+)+\s*/,"").trim()}
-function scorePost(raw){
+function scorePost(raw,isReply){
   const t=cleanText(raw);
   const words=t.split(/\s+/).filter(Boolean).length;
   if(words<1)return{score:0,tells:[]};
@@ -295,9 +295,15 @@ function scorePost(raw){
   const ai=(t.match(AIREPLY)||[]).length; if(ai)add(Math.min(36,ai*12),"AI reply phrases");
   if(words>=6&&words<=50&&!/\n/.test(t)&&POLISH.test(t)&&(ai||PRAISE.test(t)||bz))add(12,"Polished generic reply");
   if(/^(gm|gn|lfg|wagmi|this|wow|nice|cool|based|w)\b[\s!.🔥🚀💯👏🙌]*$/i.test(t)&&words<=4)add(10,"Low-effort reply");
-  const isRe=/^\s*@\w+/.test(String(raw));
+  const isRe=!!isReply||/^\s*@\w+/.test(String(raw));
   if(MILD.test(t)&&words<=30)add(14,"Template reply");
   if(isRe&&words>=4&&words<=25&&!/\n/.test(t)&&!/\b(i|i['’]m|im|me|my|mine|we|our|lol|lmao|bro|ngl|tbh|haha)\b/i.test(t)&&!/\?/.test(t)&&(MILD.test(t)||ai))add(10,"Bland one-liner");
+  const personal=/\b(i|i['’]m|im|i've|ive|i'd|me|my|mine|lol|lmao|bro|ngl|tbh|haha|wtf|fr|idk|imo)\b/i.test(t);
+  const GEN=/\b(interesting|convenient|smart|clever|cool|neat|useful|solid|promising|refreshing|practical|helpful|nice|unique|efficient|intuitive|underrated|strong|great|good|valuable|important|necessary|needed|clean|simple|easy|bullish|legit|exciting|impressive|innovative|powerful|amazing|awesome|massive|huge|insightful|seamless|smooth|fair|reliable|transparent|scalable|sustainable|meaningful|rewarding|engaging|effective|game|future|potential|ecosystem|community|builders?|vision|growth|utility|value|adoption|momentum)\b/i;
+  const VERBREST=/\b(is|are)\s+(building|bringing|making|turning|focused on|focusing on|changing|redefining|solving|pushing|taking|setting|creating|shaping|leading|helping|giving|doing)\b/i;
+  const OPENER=/^(this|that|the|it['’]?s|its|love|great|nice|such|what a|really|honestly|clean|solid|smart|interesting|big|huge|wow|gm|real|true|agreed|exactly|yes|yeah|facts)\b/i;
+  if(isRe&&words>=3&&words<=45&&!personal&&!/\?/.test(t)&&(GEN.test(t)||VERBREST.test(t)||OPENER.test(t)))add(20,"Generic AI reply");
+  if(VERBREST.test(t)&&words<=40)add(8,"Restates the project");
   const lines=t.split("\n").map(x=>x.trim()).filter(Boolean);
   const avg=lines.length?lines.reduce((a,l)=>a+l.split(/\s+/).length,0)/lines.length:0;
   if(lines.length>=5&&avg<8)add(12,"One-line paragraphs");
@@ -307,26 +313,25 @@ function scorePost(raw){
 }
 const FLAG_AT=20;
 const TIERS=[
- {max:14,name:"Certified human",c1:"#34e8a0",c2:"#1fb5c9",fun:["Typos, tangents and zero buzzwords. Suspiciously real.","This feed has a pulse. No templates detected.","Someone actually typed this with their thumbs."]},
- {max:29,name:"Mostly human",c1:"#8be35a",c2:"#34e8a0",fun:["A few stock phrases slipped in, but a human is clearly driving.","Mostly organic, lightly seasoned with LinkedIn.","Real voice, with the occasional hype word."]},
- {max:44,name:"Some slop",c1:"#f5d547",c2:"#ffa03c",fun:["Starting to smell like a content calendar.","Half human, half hook-problem-solution.","Not a bot, but the template is showing."]},
- {max:59,name:"Slop-adjacent",c1:"#ffa03c",c2:"#ff5a5f",fun:["Em dashes everywhere. Did ChatGPT learn to tweet from you?","Lots of “here’s the thing” energy in this feed.","One more “let that sink in” and we need an intervention."]},
- {max:79,name:"Slop machine",c1:"#ff5a5f",c2:"#ff4fd8",fun:["This feed runs on prompts and pure vibes.","Templates all the way down. Respect the grind.","Rocket emoji count: critical."]},
+ {max:25,name:"Certified human",c1:"#34e8a0",c2:"#1fb5c9",fun:["Typos, tangents and zero buzzwords. Suspiciously real.","This feed has a pulse. No templates detected.","Someone actually typed this with their thumbs."]},
+ {max:40,name:"Some slop",c1:"#f5d547",c2:"#ffa03c",fun:["Starting to smell like a content calendar.","Half human, half template.","Not a bot, but the template is showing."]},
+ {max:70,name:"Slop machine",c1:"#ff5a5f",c2:"#ff4fd8",fun:["This feed runs on prompts and pure vibes.","Templates all the way down. Respect the grind.","More AI replies than real ones. Busted."]},
  {max:100,name:"Peak slop",c1:"#ff4fd8",c2:"#7f5cff",fun:["Maximum slop reached. Please hydrate.","If this is a human, they are in a long-term relationship with a prompt.","The slopmeter just left the building."]}
 ];
 function tierOf(n){return TIERS.find(t=>n<=t.max)||TIERS[TIERS.length-1]}
 function hashStr(s){let h=0;for(let i=0;i<s.length;i++)h=(h*31+s.charCodeAt(i))|0;return Math.abs(h)}
 function funLine(score,seed){const t=tierOf(score);return t.fun[hashStr(String(seed)+score)%t.fun.length]}
 function analyze(items){
-  const res=items.map(it=>{const r=scorePost(it.text);return{...it,score:r.score,tells:r.tells.slice()}});
+  const res=items.map(it=>{const r=scorePost(it.text,it.isReply);return{...it,score:r.score,tells:r.tells.slice()}});
   const op=res.map(r=>{const w=cleanText(r.text).toLowerCase().split(/\s+/).filter(Boolean);return w.length>=3?w.slice(0,3).join(" "):""});
   const cnt={};op.forEach(o=>{if(o)cnt[o]=(cnt[o]||0)+1});
   res.forEach((r,i)=>{if(op[i]&&cnt[op[i]]>=3&&cnt[op[i]]/res.length>=.1){r.score=Math.min(100,r.score+8);r.tells.push("Recycled opener")}});
   const tpl=res.filter(r=>r.tells.includes("Template reply")).length;
-  if(res.length>=10&&tpl/res.length>=.25)res.forEach(r=>{if(r.tells.includes("Template reply")){r.score=Math.min(100,r.score+10);r.tells.push("Reply farming pattern")}});
+  const gen=res.filter(r=>r.tells.includes("Generic AI reply")||r.tells.includes("Template reply")).length;
+  if(res.length>=10&&gen/res.length>=.25)res.forEach(r=>{if(r.tells.includes("Template reply")||r.tells.includes("Generic AI reply")){r.score=Math.min(100,r.score+10);r.tells.push("Reply farming pattern")}});
   const avgAll=res.length?res.reduce((a,r)=>a+r.score,0)/res.length:0;
   const share=res.length?res.filter(r=>r.score>=FLAG_AT).length/res.length:0;
-  const score=Math.min(100,Math.round(.45*avgAll+.55*Math.min(100,share*130)));
+  const score=Math.round(share*100);
   const tally={};res.forEach(r=>r.tells.forEach(t=>tally[t]=(tally[t]||0)+1));
   const tells=Object.entries(tally).sort((a,b)=>b[1]-a[1]);
   const posts=res.filter(r=>!r.isReply),replies=res.filter(r=>r.isReply);
@@ -453,10 +458,10 @@ function renderList(){
   $("showlabel").textContent=showAll?"Showing all ("+a.res.length+")":"Show all posts ("+a.res.length+")";
   const box=$("list");box.textContent="";
   if(!list.length)box.appendChild(el("div","empty","Nothing flagged. This feed passes the sniff test."));
- list.slice(0,shown).forEach(r=>{
+list.slice(0,shown).forEach(r=>{
     const d=el("div","post");const top=el("div","top");
     top.appendChild(el("span","kind "+(r.isReply?"reply":"post"),r.isReply?"Reply":"Post"));
-    const sc=el("span","sc",r.score+"/100");const tt=tierOf(r.score);sc.style.background=tt.c1;top.appendChild(sc);
+    const sc=el("span","sc",r.score+"/100");sc.style.background=r.score>=FLAG_AT?"#ff5a5f":"#34e8a0";top.appendChild(sc);
     if(r.createdAt){const dt=new Date(r.createdAt);if(!isNaN(dt))top.appendChild(el("span","when",dt.toLocaleDateString("en",{month:"short",day:"numeric",year:"numeric"})))}
     if(r.id&&uname&&/^\w+$/.test(uname)&&/^\d+$/.test(r.id)){
       const l=el("a","open","Open on X ↗");l.href="https://x.com/"+uname+"/status/"+r.id;l.target="_blank";l.rel="noopener noreferrer";top.appendChild(l);
