@@ -126,7 +126,7 @@ box-shadow:0 30px 80px -40px var(--tier)}
 .gauge .mid{position:absolute;inset:0;display:grid;place-content:center;text-align:center}
 .gauge .n{font:700 74px/1 var(--disp);letter-spacing:-.05em}
 .gauge .d{font:500 14px var(--disp);color:var(--mute);margin-top:2px}
-.verdict{text-align:center;font:700 28px var(--disp);letter-spacing:-.02em;color:var(--tier)}
+ .verdict{text-align:center;font:700 28px var(--disp);letter-spacing:-.02em;color:var(--tier)}
 .fun{text-align:center;color:#c3c8d8;font-size:14.5px;margin:6px auto 14px;max-width:32ch}
 .card .why{justify-content:center}
 .brand{display:flex;justify-content:space-between;margin-top:18px;padding-top:14px;border-top:1px solid var(--line);font:500 12.5px var(--disp);color:var(--mute)}
@@ -226,7 +226,7 @@ box-shadow:0 30px 80px -40px var(--tier)}
     <div id="list"></div>
     <button class="ghost more" id="more" type="button" hidden>Show more</button>
    </div>
-   <p class="foot">This is a fun heuristic, not proof of anything. It counts stock phrases, buzzwords, em dashes, “not X, it’s Y” lines, hashtag piles, engagement bait, generic praise replies, one-line paragraphs and recycled openers. A high score means the writing looks templated, whether a person or a model wrote it.</p>
+   <p class="foot">This is a fun heuristic, not proof of anything. It counts stock phrases, buzzwords, em dashes, “not X, it’s Y” lines, hashtag piles, engagement bait, generic praise and AI-style template replies, one-line paragraphs and recycled openers. A high score means the writing looks templated, whether a person or a model wrote it.</p>
   </div>
  </div>
 </section>
@@ -242,6 +242,9 @@ const BAIT=/follow (me )?for more|repost|retweet|\brt if|bookmark this|reply wit
 const HOOK=/^(here['’]s|stop |most people|nobody|the (truth|secret|real)|unpopular|hot take|i (spent|just|built|made)|\d+ (ways|tips|lessons|things|rules))/i;
 const HOOKEMO=/[🧵👇🚀🔥💡✅⬇️📌]/u;
 const PRAISE=/^(great|good|excellent|fantastic|awesome|amazing|brilliant|powerful|solid|valid|fair|interesting|insightful)\s+(point|take|insight|thread|post|breakdown|perspective|share|read)|^(this is|that['’]?s|so|very|such a)\s+(so |a |an )?(true|great|good|powerful|insightful|spot on|facts|important)|couldn['’]?t agree more|well said|spot on\b|\b100%|^absolutely\b|totally agree|love this\b|this resonates|\bso true\b|exactly this|thanks for sharing|this hits\b/i;
+const AIREPLY=/\b(this is (huge|massive|big|exciting|incredible|impressive|amazing|the way)|huge (for|win|step|move)|big (move|things|step|win)|exciting (times|stuff|to see|news|update|developments?)|the future of|future is (bright|here)|can['’]?t wait to see|looking forward to|great (work|job|initiative|project|update|news|move|vision|team|stuff|to see)|well done|kudos|keep (building|it up|up the|pushing|shining)|love (the|how|seeing|to see|what)|bullish|next level|game[- ]changing|innovative|revolutionary|strong (team|fundamentals|community|project)|solid (project|team|move|update|fundamentals)|massive (potential|update|win)|(huge|great|real|massive) potential|ecosystem|adoption|community[- ]driven|thrilled|stoked|proud to|congrat(s|ulations)|truly|definitely|undoubtedly|remarkable|impressive|incredible|fascinating|wonderful|perfect(ly)? (said|put|timing)|nailed it|this is why|key (takeaway|insight)|powerful (message|insight|reminder|stuff)|important (reminder|point|message))\b/gi;
+const POLISH=/^[A-Z][^\n]{25,280}[.!][\s\p{Extended_Pictographic}]*$/u;
+const MILD=/\b(is|are|sounds|seems|looks|feels|seem|sound|look)\s+(like\s+)?(a\s+|an\s+)?(really\s+|pretty\s+|quite\s+|very\s+|super\s+|genuinely\s+|actually\s+|so\s+|kinda\s+)?(interesting|convenient|smart|clever|cool|neat|useful|solid|promising|refreshing|practical|helpful|nice|fun|unique|efficient|intuitive|underrated|strong|great|good|wild|huge|big|fresh|valuable|important|necessary|needed|clean|simple|easy|bullish|legit|fair)\b|\bmakes?\s+(a\s+lot\s+of\s+|so\s+much\s+|total\s+|perfect\s+|more\s+)?sense\b|\b(every\s+time|for\s+sure|no\s+doubt|for\s+real)\s*[.!]?$|\b(interesting|smart|clever|solid|nice|cool|neat|unique|fresh|good|great)\s+(collective\s+)?(setup|approach|idea|move|angle|take|design|mechanic|feature|concept|play|way)\b|\b(instead of|rather than|beats?|over)\b.{3,60}\b(makes sense|is smart|every time|is better|works better)\b/i;
 const ASKQ=/\b(what do you think|thoughts\?|agree\?|what['’]s your take|who else)\b[^]*\?\s*$/i;
 const SAMPLE=`Here’s the thing nobody talks about: most founders don’t fail because of the product. It’s not a talent problem — it’s a consistency problem.
 
@@ -277,11 +280,11 @@ function cleanText(t){return String(t).replace(/https?:\/\/\S+/g,"").replace(/^(
 function scorePost(raw){
   const t=cleanText(raw);
   const words=t.split(/\s+/).filter(Boolean).length;
-  if(words<3)return{score:0,tells:[]};
+  if(words<1)return{score:0,tells:[]};
   let s=0;const tells=[];const add=(n,l)=>{s+=n;tells.push(l)};
   const low=t.toLowerCase();
   const ph=PH.filter(p=>low.includes(p)).length; if(ph)add(Math.min(36,ph*12),"Stock phrases");
-  const bz=(t.match(BZ)||[]).length; if(bz)add(Math.min(24,bz*8),"Buzzwords");
+ const bz=(t.match(BZ)||[]).length; if(bz)add(Math.min(24,bz*8),"Buzzwords");
   const em=(t.match(/—/g)||[]).length; if(em)add(Math.min(12,em*6),"Em dashes");
   if(NOT1.test(t)||NOT2.test(t))add(14,"Not X, it’s Y");
   const ht=(t.match(/#\w+/g)||[]).length; if(ht>2)add(Math.min(16,(ht-2)*8),"Hashtag pile");
@@ -289,6 +292,12 @@ function scorePost(raw){
   if(BAIT.test(t))add(16,"Engagement bait");
   if(words<=30&&PRAISE.test(t))add(14,"Generic praise");
   if(ASKQ.test(t))add(6,"Engagement question");
+  const ai=(t.match(AIREPLY)||[]).length; if(ai)add(Math.min(36,ai*12),"AI reply phrases");
+  if(words>=6&&words<=50&&!/\n/.test(t)&&POLISH.test(t)&&(ai||PRAISE.test(t)||bz))add(12,"Polished generic reply");
+  if(/^(gm|gn|lfg|wagmi|this|wow|nice|cool|based|w)\b[\s!.🔥🚀💯👏🙌]*$/i.test(t)&&words<=4)add(10,"Low-effort reply");
+  const isRe=/^\s*@\w+/.test(String(raw));
+  if(MILD.test(t)&&words<=30)add(14,"Template reply");
+  if(isRe&&words>=4&&words<=25&&!/\n/.test(t)&&!/\b(i|i['’]m|im|me|my|mine|we|our|lol|lmao|bro|ngl|tbh|haha)\b/i.test(t)&&!/\?/.test(t)&&(MILD.test(t)||ai))add(10,"Bland one-liner");
   const lines=t.split("\n").map(x=>x.trim()).filter(Boolean);
   const avg=lines.length?lines.reduce((a,l)=>a+l.split(/\s+/).length,0)/lines.length:0;
   if(lines.length>=5&&avg<8)add(12,"One-line paragraphs");
@@ -313,7 +322,11 @@ function analyze(items){
   const op=res.map(r=>{const w=cleanText(r.text).toLowerCase().split(/\s+/).filter(Boolean);return w.length>=3?w.slice(0,3).join(" "):""});
   const cnt={};op.forEach(o=>{if(o)cnt[o]=(cnt[o]||0)+1});
   res.forEach((r,i)=>{if(op[i]&&cnt[op[i]]>=3&&cnt[op[i]]/res.length>=.1){r.score=Math.min(100,r.score+8);r.tells.push("Recycled opener")}});
-  const score=res.length?Math.round(res.reduce((a,r)=>a+r.score,0)/res.length):0;
+  const tpl=res.filter(r=>r.tells.includes("Template reply")).length;
+  if(res.length>=10&&tpl/res.length>=.25)res.forEach(r=>{if(r.tells.includes("Template reply")){r.score=Math.min(100,r.score+10);r.tells.push("Reply farming pattern")}});
+  const avgAll=res.length?res.reduce((a,r)=>a+r.score,0)/res.length:0;
+  const share=res.length?res.filter(r=>r.score>=FLAG_AT).length/res.length:0;
+  const score=Math.min(100,Math.round(.45*avgAll+.55*Math.min(100,share*130)));
   const tally={};res.forEach(r=>r.tells.forEach(t=>tally[t]=(tally[t]||0)+1));
   const tells=Object.entries(tally).sort((a,b)=>b[1]-a[1]);
   const posts=res.filter(r=>!r.isReply),replies=res.filter(r=>r.isReply);
@@ -440,7 +453,7 @@ function renderList(){
   $("showlabel").textContent=showAll?"Showing all ("+a.res.length+")":"Show all posts ("+a.res.length+")";
   const box=$("list");box.textContent="";
   if(!list.length)box.appendChild(el("div","empty","Nothing flagged. This feed passes the sniff test."));
-  list.slice(0,shown).forEach(r=>{
+ list.slice(0,shown).forEach(r=>{
     const d=el("div","post");const top=el("div","top");
     top.appendChild(el("span","kind "+(r.isReply?"reply":"post"),r.isReply?"Reply":"Post"));
     const sc=el("span","sc",r.score+"/100");const tt=tierOf(r.score);sc.style.background=tt.c1;top.appendChild(sc);
